@@ -12,28 +12,78 @@ func main() {
     
     let lines = inputString.components(separatedBy: "\n")
         .filter { !$0.isEmpty }
+
+    var grid = [[Character]]()
     
-    // Sample algorithm
-    var scoreboard = [String: Int]()
     lines.forEach { line in
-        let (name, score) = parseLine(line)
-        scoreboard[name] = score
+        grid.append(Array(line))
     }
-    scoreboard
-        .sorted { lhs, rhs in
-            lhs.value > rhs.value
+    
+    var visitedCells = [(Int, Int)]()
+    var currentCell = (0, 0)
+    
+    for i in 0..<grid.count {
+        for j in 0..<grid.count {
+            if grid[i][j] == "^" {
+                visitedCells.append((i, j))
+                currentCell = (i, j)
+                break
+            }
         }
-        .forEach { name, score in
-            print("\(name) \(score) pts")
+    }
+    
+    var currentDirection = Direction.up
+    var stillInsideGrid = true
+    
+    while stillInsideGrid {
+        let step = currentDirection.move()
+        let nextCell = (currentCell.0 + step.0, currentCell.1 + step.1)
+        if nextCell.0 < 0 || nextCell.1 < 0 || nextCell.0 >= grid.count || nextCell.1 >= grid.count {
+            stillInsideGrid = false
+        } else {
+            switch grid[nextCell.0][nextCell.1] {
+            case "#":
+                currentDirection = currentDirection.next()
+            case ".", "^":
+                visitedCells.append(nextCell)
+                currentCell = nextCell
+            default: fatalError()
+            }
         }
+    }
+    
+    
+    let uniqueVisitedCells = visitedCells.enumerated().filter { (index, element) in
+        visitedCells.firstIndex(where: { $0 == element }) == index
+    }.map { $0.element }
+
+    print(uniqueVisitedCells.count)
 }
 
-func parseLine(_ line: String) -> (name: String, score: Int) {
-    let helper = RegexHelper(pattern: #"([\-\w]*)\s(\d+)"#)
-    let result = helper.parse(line)
-    let name = result[0]
-    let score = Int(result[1])!
-    return (name: name, score: score)
+enum Direction {
+    case up
+    case right
+    case down
+    case left
+    
+    func next() -> Direction {
+        switch self {
+        case .up: return .right
+        case .right: return .down
+        case .down: return .left
+        case .left: return .up
+        }
+    }
+    
+    func move() -> (Int, Int) {
+        switch self {
+        case .up: return (-1, 0)
+        case .right: return (0, 1)
+        case .down: return (1, 0)
+        case .left: return (0, -1)
+        }
+    }
 }
+
 
 main()
